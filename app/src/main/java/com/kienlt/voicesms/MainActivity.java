@@ -1,5 +1,5 @@
 package com.kienlt.voicesms;
-
+// Import các thư viện và khai báo biến cho các thành phần UI, các hằng số yêu cầu quyền truy cập, và TextToSpeech (chuyển văn bản thành giọng nói).
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvSMSContent;
     private TextToSpeech tts;
 
+    // Phương thức onCreate() được gọi khi ứng dụng được khởi động, và được sử dụng để tạo các thành phần UI và kiểm tra quyền truy cập.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_SMS}, PERMISSIONS_REQUEST_READ_SMS);
         }
 
-        // Khởi tạo TextToSpeech
+        // Khởi tạo TextToSpeech và chọn bộ giọng tiếng Việt
         tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
@@ -57,7 +58,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Xử lý sự kiện khi nhấn nút "Đọc tin nhắn"
+        // Xử lý sự kiện khi nhấn nút "Đọc tin nhắn". Đầu tiên, phương thức readSMS() được gọi để đọc nội dung tin nhắn và trả về.
+        // Sau đó, nội dung tin nhắn được hiển thị trên TextView và đọc bằng TextToSpeech nếu nội dung khác null.
         btnReadSMS.setOnClickListener(view -> {
             String smsContent = readSMS();
             if (smsContent != null) {
@@ -67,8 +69,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Phương thức speak() được sử dụng để đọc nội dung tin nhắn bằng TextToSpeech.
+    private void speak(String text) {
+        if (tts != null && !tts.isSpeaking()) {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+        }
+    }
 
-    // Phương thức đọc tin nhắn (Tạm thời là đọc auto tin nhắn đầu tiên) và trả về nội dung của tin nhắn đó.
+    // Phương thức readSMS() được sử dụng để đọc nội dung tin nhắn đầu tiên trong hộp thư đến và trả về nó.
     private String readSMS() {
         String smsContent = null;
         //Kiểm tra có đã được cấp quyền đọc tin nhắn chưa
@@ -83,24 +91,18 @@ public class MainActivity extends AppCompatActivity {
         return smsContent;
     }
 
-    // Phương thức sử dụng TextToSpeech để đọc nội dung tin nhắn
-    private void speak(String text) {
-        if (tts != null && !tts.isSpeaking()) {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-        }
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Hủy TextToSpeech khi đóng ứng dụng
+        // Phương thức onDestroy() được gọi khi ứng dụng được đóng lại để hủy TextToSpeech.
         if (tts != null) {
             tts.stop();
             tts.shutdown();
         }
     }
 
-    // Xử lý kết quả yêu cầu cấp quyền truy cập
+    // Phương thức onRequestPermissionsResult() được sử dụng để xử lý kết quả yêu cầu cấp quyền truy cập.
+    // Nếu được cấp quyền, ứng dụng sẽ hiển thị một thông báo thành công, ngược lại, thông báo lỗi sẽ được hiển thị.
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -112,4 +114,5 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
 }
