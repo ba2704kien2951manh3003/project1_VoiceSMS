@@ -69,19 +69,10 @@ public class MainActivity extends AppCompatActivity {
                 tvSMSContent.setText(smsContent);
                 speak(smsContent);
 
-
+                readAllSMS();
             }
         });
 
-        btnReadSMS.setOnClickListener(view -> {
-            String smsContent = readSMS();
-            if (smsContent != null) {
-                tvSMSContent.setText(smsContent);
-                speak(smsContent);
-            }
-
-            readAllSMS();
-        });
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1, new ArrayList<String>());
         ListView listViewSMS = findViewById(R.id.list_view_sms);
