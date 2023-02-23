@@ -3,7 +3,6 @@ package com.kienlt.voicesms;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.widget.Button;
 import android.widget.TextView;
@@ -18,6 +17,10 @@ import java.util.Locale;
 
 import android.database.Cursor;
 import android.net.Uri;
+
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -65,8 +68,24 @@ public class MainActivity extends AppCompatActivity {
             if (smsContent != null) {
                 tvSMSContent.setText(smsContent);
                 speak(smsContent);
+
+
             }
         });
+
+        btnReadSMS.setOnClickListener(view -> {
+            String smsContent = readSMS();
+            if (smsContent != null) {
+                tvSMSContent.setText(smsContent);
+                speak(smsContent);
+            }
+
+            readAllSMS();
+        });
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1, new ArrayList<String>());
+        ListView listViewSMS = findViewById(R.id.list_view_sms);
+        listViewSMS.setAdapter(adapter);
     }
 
     // Phương thức speak() được sử dụng để đọc nội dung tin nhắn bằng TextToSpeech.
@@ -91,6 +110,25 @@ public class MainActivity extends AppCompatActivity {
         return smsContent;
     }
 
+    private void readAllSMS() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED) {
+            Cursor cursor = getContentResolver().query(Uri.parse("content://sms/inbox"), null, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                ArrayList<String> smsList = new ArrayList<>();
+                do {
+                    String smsContent = cursor.getString(cursor.getColumnIndexOrThrow("body"));
+                    smsList.add(smsContent);
+                } while (cursor.moveToNext());
+                cursor.close();
+
+                ArrayAdapter<String> adapter = (ArrayAdapter<String>) ((ListView) findViewById(R.id.list_view_sms)).getAdapter();
+                adapter.clear();
+                adapter.addAll(smsList);
+            }
+        }
+    }
+
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -114,5 +152,4 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
 }
