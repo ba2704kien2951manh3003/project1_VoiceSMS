@@ -51,7 +51,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onInit(int status) {
                 if (status != TextToSpeech.ERROR) {
-                    tts.setLanguage(Locale.getDefault());
+                    // Chọn bộ giọng tiếng Việt
+                    tts.setLanguage(new Locale("vi", "VN"));
                 }
             }
         });
@@ -65,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
 
     // Phương thức đọc tin nhắn (Tạm thời là đọc auto tin nhắn đầu tiên) và trả về nội dung của tin nhắn đó.
     private String readSMS() {
