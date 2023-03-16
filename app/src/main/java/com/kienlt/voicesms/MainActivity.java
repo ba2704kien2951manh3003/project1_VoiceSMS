@@ -18,8 +18,12 @@ import java.util.Locale;
 import android.database.Cursor;
 import android.net.Uri;
 
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+
 
 
 public class MainActivity extends AppCompatActivity {
@@ -62,61 +66,72 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Xử lý sự kiện khi nhấn nút "Đọc tin nhắn". Đầu tiên, phương thức readSMS() được gọi để đọc nội dung tin nhắn và trả về.
-        // Sau đó, nội dung tin nhắn được hiển thị trên TextView và đọc bằng TextToSpeech nếu nội dung khác null.
         btnReadSMS.setOnClickListener(view -> {
-            String smsContent = readSMS();
-            if (smsContent != null) {
-                tvSMSContent.setText(smsContent);
-                speak(smsContent);
-
-                readAllSMS();
-            }
+            readSMS();
         });
-
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1, new ArrayList<String>());
-        ListView listViewSMS = findViewById(R.id.list_view_sms);
-        listViewSMS.setAdapter(adapter);
-    }
-
-    // Phương thức speak() được sử dụng để đọc nội dung tin nhắn bằng TextToSpeech.
-    private void speak(String text) {
-        if (tts != null && !tts.isSpeaking()) {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
         }
-    }
 
-    // Phương thức readSMS() được sử dụng để đọc nội dung tin nhắn đầu tiên trong hộp thư đến và trả về nó.
+        // Phương thức speak() được sử dụng để đọc nội dung tin nhắn bằng TextToSpeech.
+        private void speak(String text) {
+            if (tts != null && !tts.isSpeaking()) {
+                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        }
+
+
+
     private String readSMS() {
-        String smsContent = null;
-        //Kiểm tra có đã được cấp quyền đọc tin nhắn chưa
+        final String[] smsContent = new String[1];
+        // Kiểm tra quyền đọc tin nhắn
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED) {
-            // Lấy tin nhắn đầu tiên trong hộp thư đến
+
+            // Lấy danh sách tin nhắn trong hộp thư đến
             Cursor cursor = getContentResolver().query(Uri.parse("content://sms/inbox"), null, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                smsContent = cursor.getString(cursor.getColumnIndexOrThrow("body"));
+
+            // Tạo mảng để chứa danh sách tin nhắn
+            ArrayList<String> smsList = new ArrayList<>();
+
+            // Đọc từng tin nhắn và thêm vào mảng
+            while (cursor != null && cursor.moveToNext()) {
+                String sender = cursor.getString(cursor.getColumnIndexOrThrow("address"));
+                String body = cursor.getString(cursor.getColumnIndexOrThrow("body"));
+                long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow("date"));
+
+                // Định dạng thời gian dưới dạng ngày/giờ/phút/giây
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss");
+                String date = sdf.format(new Date(timestamp));
+
+                String sms =
+                        "Người gửi: " + sender + "\n" +
+                        "Vào lúc: " + date   + "\n" +
+                        "Nội dung tin nhắn: " + body   + "\n";
+                smsList.add(sms);
+            }
+
+            // Hiển thị danh sách tin nhắn để người dùng chọn
+            final CharSequence[] items = smsList.toArray(new CharSequence[smsList.size()]);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("CHỌN TIN NHẮN MUỐN ĐỌC");
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int item) {
+                    // Lấy tin nhắn được chọn
+                    String selectedSMS = items[item].toString();
+                    smsContent[0] = selectedSMS;
+                    //Đọc tin nhắn lên
+                    //In tin nhắn lên màn hình
+                    tvSMSContent.setText(smsContent[0]);
+                    speak(smsContent[0]);
+                }
+            });
+            AlertDialog alert = builder.create();
+            alert.show();
+
+            // Đóng con trỏ
+            if (cursor != null) {
                 cursor.close();
             }
         }
-        return smsContent;
-    }
-
-    private void readAllSMS() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED) {
-            Cursor cursor = getContentResolver().query(Uri.parse("content://sms/inbox"), null, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                ArrayList<String> smsList = new ArrayList<>();
-                do {
-                    String smsContent = cursor.getString(cursor.getColumnIndexOrThrow("body"));
-                    smsList.add(smsContent);
-                } while (cursor.moveToNext());
-                cursor.close();
-
-                ArrayAdapter<String> adapter = (ArrayAdapter<String>) ((ListView) findViewById(R.id.list_view_sms)).getAdapter();
-                adapter.clear();
-                adapter.addAll(smsList);
-            }
-        }
+        return smsContent[0];
     }
 
 
